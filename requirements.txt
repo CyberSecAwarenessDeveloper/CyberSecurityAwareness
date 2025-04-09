@@ -1,0 +1,9 @@
+gradio
+requests
+python-dotenv
+scikit-learn
+pandas
+matplotlib
+playwright
+langchain
+langchain_ollama

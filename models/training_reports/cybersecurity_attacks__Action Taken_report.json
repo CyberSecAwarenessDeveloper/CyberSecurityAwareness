@@ -1,0 +1,11 @@
+{
+  "dataset": "cybersecurity_attacks",
+  "label_column": "Action Taken",
+  "samples": 40000,
+  "classes": [
+    "Blocked",
+    "Ignored",
+    "Logged"
+  ],
+  "accuracy": 1.0
+}

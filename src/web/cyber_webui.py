@@ -1,135 +1,124 @@
 # src/web/cyber_webui.py
-import logging
-import requests
-import os
-import sys
-from dotenv import load_dotenv
-import gradio as gr
-
+import gradio as gr, logging
 from fastapi import FastAPI
-from fastapi.responses import HTMLResponse
-from starlette.middleware.cors import CORSMiddleware
-from src.ml.predictor import predict_by_category
+from src.ml.predictor import answer_with_rag, check_ollama_running
 
-# Load .env variables
-load_dotenv()
-
-# Logging setup
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# FastAPI app
-fastapi_app = FastAPI()
+app = FastAPI()
 
-# Allow local CORS for frontend integration
-fastapi_app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Define available roles for the assistant
+ROLES = {
+    "Security Expert": "You are a cybersecurity expert with deep technical knowledge.",
+    "Security Educator": "You are a cybersecurity educator, focused on teaching concepts clearly.",
+    "Security Analyst": "You are a security analyst who investigates threats and vulnerabilities.",
+    "Security Advisor": "You are a security advisor who provides practical recommendations."
+}
 
-# Set up Python path to find webUIFiles
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
-# Import the web-ui interface
-from src.webUIFiles import webui as web_ui_app
-
-# Home route
-@fastapi_app.get("/", response_class=HTMLResponse)
-def home():
-    return """
-    <html>
-        <head><title>Cyber Awareness</title></head>
-        <body>
-            <h2>Welcome to the Cyber Security Dashboard</h2>
-            <ul>
-                <li><a href="/chat">Go to Cyber Chatbot</a></li>
-                <li><a href="/assistant">Open web-ui Assistant</a></li>
-            </ul>
-        </body>
-    </html>
-    """
-
-# Query Ollama
-OLLAMA_URL = os.getenv("OLLAMA_ENDPOINT", "http://localhost:11434")
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL_NAME", "deepseek-coder-v2:latest")
-
-def query_ollama(prompt: str, model: str = OLLAMA_MODEL) -> str:
+def handle_prompt(user_message, history, role):
+    """Process the user message and return updated history"""
+    logger.info(f"Q: {user_message} (Role: {role})")
+    
+    # Initialize empty history if None
+    if history is None:
+        history = []
+    
+    # Create new history list (don't modify input directly)
+    new_history = list(history)
+    
+    # Add user message to history
+    new_history.append({"role": "user", "content": user_message})
+    
     try:
-        response = requests.post(
-            f"{OLLAMA_URL}/api/chat",
-            json={
-                "model": model,
-                "messages": [{"role": "user", "content": prompt}],
-                "stream": False
-            },
-            timeout=120
+        # Get response from RAG system
+        answer = answer_with_rag(user_message, k=3, role=role)
+        
+        # Log the response (truncated)
+        logger.info(f"A: {answer[:50]}..." if answer and len(answer) > 50 else f"A: {answer}")
+        
+        # Add the assistant's response to history
+        new_history.append({"role": "assistant", "content": answer})
+        
+    except Exception as e:
+        logger.error(f"Error in handle_prompt: {e}", exc_info=True)
+        new_history.append({"role": "assistant", "content": "I encountered an error while processing your request."})
+    
+    # Return the new history
+    return new_history
+
+with gr.Blocks(title="Cybersecurity Awareness Assistant") as interface:
+    # Status indicator
+    with gr.Row():
+        ollama_status = gr.State(check_ollama_running())
+        status_indicator = gr.Markdown(
+            "🟢 Ollama server is running" if check_ollama_running() else "🔴 Ollama server is offline - Using fallback mode"
         )
-        response.raise_for_status()
-        result = response.json()
-        return result.get("message", {}).get("content", "No response from Ollama.")
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Ollama HTTP error: {e}")
-        return f"Ollama HTTP error: {e}"
+    
+    gr.Markdown("# Cybersecurity Awareness Assistant")
+    
+    # Role selector
+    role_dropdown = gr.Dropdown(
+        choices=list(ROLES.keys()),
+        value="Security Expert",
+        label="Select Assistant Role",
+        info="Choose how the assistant should respond to your questions"
+    )
+    
+    # Chat interface with messages format - NO AVATARS
+    chatbot = gr.Chatbot(
+        value=[], 
+        label="Cybersecurity Chat",
+        height=500,
+        type="messages",  # Important for proper formatting
+        show_copy_button=True
+    )
+    
+    with gr.Row():
+        msg = gr.Textbox(
+            label="Ask anything about cybersecurity",
+            placeholder="e.g. How does a DDoS attack work?",
+            scale=9
+        )
+        submit_btn = gr.Button("Submit", scale=1, variant="primary")
+    
+    # Clear button
+    clear_btn = gr.ClearButton([msg, chatbot], value="Clear Chat")
+    
+    def respond(message, chat_history, role):
+        """Process a user message and return the updated chat history"""
+        if not message.strip():
+            return chat_history, ""
+            
+        # Process the message and get updated history
+        updated_history = handle_prompt(message, chat_history, role)
+        
+        # Return updated history and clear message box
+        return updated_history, ""
 
-# Chat prediction logic
-def predict(message: str, history: list = None):
-    logger.info(f"Received input: {message}")
+    # Connect UI components to functions
+    msg.submit(respond, [msg, chatbot, role_dropdown], [chatbot, msg])
+    submit_btn.click(respond, [msg, chatbot, role_dropdown], [chatbot, msg])
+    
+    # Debug panel with basic info only
+    with gr.Accordion("Debug Info", open=False):
+        debug_info = gr.Textbox(
+            label="Debug Log", 
+            value="This panel shows basic information about the conversation.",
+            lines=4,
+            interactive=False
+        )
+        
+        # Simpler debug function that won't cause issues
+        def update_debug(history):
+            if not history or len(history) < 2:
+                return "No messages in history yet."
+            try:
+                last_user_msg = next((msg["content"] for msg in reversed(history) if msg["role"] == "user"), "")
+                return f"Last question: {last_user_msg}"
+            except:
+                return "Error parsing history."
+            
+        chatbot.change(update_debug, chatbot, debug_info)
 
-    message_lower = message.lower()
-
-    # Use local model if specific keywords are detected
-    if "phishing" in message_lower:
-        result = predict_by_category(message, "awareness")
-        return f"🛡️ Awareness model says: {result}"
-    elif "malware" in message_lower:
-        result = predict_by_category(message, "malware")
-        return f"🦠 Malware model says: {result}"
-    elif "threat" in message_lower:
-        result = predict_by_category(message, "threat")
-        return f"🚨 Threat model says: {result}"
-    elif "vulnerability" in message_lower:
-        result = predict_by_category(message, "vulnerability")
-        return f"🔍 Vulnerability model says: {result}"
-
-    # Use browser agent if mentioned
-    if "agent" in message_lower or "check" in message_lower:
-        try:
-            agent_response = requests.post(
-                "http://127.0.0.1:7788/api/agent",
-                json={"input": message},
-                timeout=60
-            )
-            if agent_response.status_code == 200:
-                return agent_response.json().get("output", "Agent responded but no output.")
-            return f"Agent call failed: {agent_response.status_code} - {agent_response.text}"
-        except Exception as e:
-            return f"Agent error: {e}"
-
-    # Fallback to general-purpose LLM (Ollama)
-    return query_ollama(prompt=message)
-
-
-# Gradio ChatInterface
-gradio_chat = gr.ChatInterface(
-    fn=predict,
-    chatbot=gr.Chatbot(height=500, type="messages"),
-    textbox=gr.Textbox(
-        placeholder="Ask cybersecurity questions or interact with the browser agent...",
-        container=False,
-        scale=7
-    ),
-    title="Cyber Security Awareness Assistant",
-    description="Ask questions, analyze browser content, and learn about cyber threats.",
-    theme="soft",
-    examples=[["Is this email safe?"], ["Run awareness test"], ["Check if this link is phishing"]]
-)
-
-# Mount routes
-fastapi_app = gr.mount_gradio_app(fastapi_app, gradio_chat, path="/chat")
-fastapi_app = gr.mount_gradio_app(fastapi_app, web_ui_app.create_ui(theme_name="Ocean"), path="/assistant")
-
-# Entry point
-app = fastapi_app
+app = gr.mount_gradio_app(app, interface, path="/chat")

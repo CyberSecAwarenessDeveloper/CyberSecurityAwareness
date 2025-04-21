@@ -1,0 +1,12 @@
+{
+  "dataset": "ai_ml_cybersecurity_dataset",
+  "label_column": "Response Action",
+  "samples": 20000,
+  "classes": [
+    "Blocked",
+    "Contained",
+    "Eradicated",
+    "Recovered"
+  ],
+  "accuracy": 1.0
+}

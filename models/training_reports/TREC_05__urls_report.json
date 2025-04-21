@@ -1,0 +1,29 @@
+{
+  "dataset": "TREC_05",
+  "label_column": "urls",
+  "samples": 59030,
+  "classes": [
+    " Chapman & Broussard. ",
+    " Enron could be on the hook for the partnership's $915 million in debt. ",
+    " Enron says it shouldn't have counted the notes as assets. ",
+    " Enron's stake in these companies totaled about $2 billion. Friday's value: about $40 million. Enron won't say why it didn't just sell the stock and take its profits. The most logical explanation is tax avoidance. ",
+    " a 50 percent premium over Rubbermaid's market price at the time. ",
+    " almost all managers agreed. ",
+    " and Fort McMurray's oilsands project.",
+    " both of ChevronTexaco Corp./ 18:39 EST ",
+    " caused the net-worth disappearance that set Enron on the road to ruin. ",
+    " even if the merger deal fell apart. Dynegy told Enron on Wednesday it was exercising its rights. ",
+    " it triggered the $1.2 billion net-worth write-down that touched off the downward spiral that led to bankruptcy. ",
+    " its trading counterparties and the rating agencies. The logic of this pact was essentially circular. ",
+    " power prices have tumbled and the economy has faltered.",
+    " the deal values Enron shares at about $11.20 -- well above the current market price. ",
+    " withdrew.",
+    "'' he said. ",
+    "'' she says. Sure beats being anywhere near Enron.",
+    "0",
+    "000 square feet in the 600 Jefferson building. ",
+    "1",
+    "None"
+  ],
+  "accuracy": 0.9572
+}

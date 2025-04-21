@@ -1,0 +1,1 @@
+DDoS (Distributed Denial of Service) attacks overwhelm servers with traffic from multiple sources to disrupt services.

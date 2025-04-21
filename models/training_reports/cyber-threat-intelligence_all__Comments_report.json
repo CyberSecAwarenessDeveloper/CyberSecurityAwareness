@@ -1,0 +1,11 @@
+{
+  "dataset": "cyber-threat-intelligence_all",
+  "label_column": "Comments",
+  "samples": 19464,
+  "classes": [
+    "[]",
+    "[{'id': 1, 'comment': 'exclude'}]",
+    "[{'id': 2, 'comment': 'Schau mal bitte dr\u00fcber'}]"
+  ],
+  "accuracy": 1.0
+}

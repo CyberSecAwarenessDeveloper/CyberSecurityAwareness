@@ -1,0 +1,25 @@
+{
+  "dataset": "text_threats",
+  "label_column": "label_3",
+  "samples": 329,
+  "classes": [
+    "EMAIL",
+    "FILEPATH",
+    "IPV4",
+    "Infrastucture",
+    "SOFTWARE",
+    "TIME",
+    "URL",
+    "attack-pattern",
+    "campaign",
+    "hash",
+    "identity",
+    "location",
+    "malware",
+    "threat-actor",
+    "tools",
+    "url",
+    "vulnerability"
+  ],
+  "accuracy": 0.4545
+}

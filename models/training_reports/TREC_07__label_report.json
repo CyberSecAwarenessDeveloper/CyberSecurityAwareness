@@ -1,0 +1,10 @@
+{
+  "dataset": "TREC_07",
+  "label_column": "label",
+  "samples": 53757,
+  "classes": [
+    "0",
+    "1"
+  ],
+  "accuracy": 0.9962
+}

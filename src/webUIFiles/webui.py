@@ -25,16 +25,16 @@ from browser_use.browser.context import (
 )
 from langchain_ollama import ChatOllama
 from playwright.async_api import async_playwright
-from src.utils.agent_state import AgentState
-from src.utils import utils
-from src.agent.custom_agent import CustomAgent
-from src.browser.custom_browser import CustomBrowser
-from src.agent.custom_prompts import CustomSystemPrompt, CustomAgentMessagePrompt
-from src.browser.custom_context import BrowserContextConfig, CustomBrowserContext
-from src.controller.custom_controller import CustomController
+from webUIFiles.src.utils.agent_state import AgentState
+from webUIFiles.src.utils import utils
+from webUIFiles.src.agent.custom_agent import CustomAgent
+from webUIFiles.src.browser.custom_browser import CustomBrowser
+from webUIFiles.src.agent.custom_prompts import CustomSystemPrompt, CustomAgentMessagePrompt
+from webUIFiles.src.browser.custom_context import BrowserContextConfig, CustomBrowserContext
+from webUIFiles.src.controller.custom_controller import CustomController
 from gradio.themes import Citrus, Default, Glass, Monochrome, Ocean, Origin, Soft, Base
-from src.utils.utils import update_model_dropdown, get_latest_files, capture_screenshot, MissingAPIKeyError
-from src.utils import utils
+from webUIFiles.src.utils.utils import update_model_dropdown, get_latest_files, capture_screenshot, MissingAPIKeyError
+from webUIFiles.src.utils import utils
 
 # Global variables for persistence
 _global_browser = None

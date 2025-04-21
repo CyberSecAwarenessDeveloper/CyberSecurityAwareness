@@ -1,0 +1,11 @@
+{
+  "dataset": "cve_dataset",
+  "label_column": "access_authentication",
+  "samples": 88776,
+  "classes": [
+    "MULTIPLE",
+    "NONE",
+    "SINGLE"
+  ],
+  "accuracy": 0.9445
+}

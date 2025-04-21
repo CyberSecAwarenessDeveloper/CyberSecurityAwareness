@@ -1,0 +1,12 @@
+{
+  "dataset": "ai_ml_cybersecurity_dataset",
+  "label_column": "Attack Severity",
+  "samples": 20000,
+  "classes": [
+    "Critical",
+    "High",
+    "Low",
+    "Medium"
+  ],
+  "accuracy": 0.9982
+}

@@ -1,0 +1,11 @@
+{
+  "dataset": "cyber-threat-intelligence-splited_train",
+  "label_column": "Comments",
+  "samples": 6812,
+  "classes": [
+    "[]",
+    "[{'id': 1, 'comment': 'exclude'}]",
+    "[{'id': 2, 'comment': 'Schau mal bitte dr\u00fcber'}]"
+  ],
+  "accuracy": 1.0
+}

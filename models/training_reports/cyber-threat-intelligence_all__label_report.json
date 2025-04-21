@@ -1,0 +1,30 @@
+{
+  "dataset": "cyber-threat-intelligence_all",
+  "label_column": "label",
+  "samples": 9938,
+  "classes": [
+    "DOMAIN",
+    "EMAIL",
+    "FILEPATH",
+    "IPV4",
+    "Infrastucture",
+    "MD5",
+    "REGISTRYKEY",
+    "SHA1",
+    "SHA2",
+    "SOFTWARE",
+    "TIME",
+    "URL",
+    "attack-pattern",
+    "campaign",
+    "hash",
+    "identity",
+    "location",
+    "malware",
+    "threat-actor",
+    "tools",
+    "url",
+    "vulnerability"
+  ],
+  "accuracy": 0.9512
+}

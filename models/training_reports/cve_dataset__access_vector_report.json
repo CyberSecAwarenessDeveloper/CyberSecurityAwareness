@@ -1,0 +1,11 @@
+{
+  "dataset": "cve_dataset",
+  "label_column": "access_vector",
+  "samples": 88776,
+  "classes": [
+    "ADJACENT_NETWORK",
+    "LOCAL",
+    "NETWORK"
+  ],
+  "accuracy": 0.9937
+}

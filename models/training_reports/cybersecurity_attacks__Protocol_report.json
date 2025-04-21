@@ -1,0 +1,11 @@
+{
+  "dataset": "cybersecurity_attacks",
+  "label_column": "Protocol",
+  "samples": 40000,
+  "classes": [
+    "ICMP",
+    "TCP",
+    "UDP"
+  ],
+  "accuracy": 0.3417
+}

@@ -1,0 +1,11 @@
+{
+  "dataset": "cve_dataset",
+  "label_column": "impact_integrity",
+  "samples": 88776,
+  "classes": [
+    "COMPLETE",
+    "NONE",
+    "PARTIAL"
+  ],
+  "accuracy": 0.9772
+}

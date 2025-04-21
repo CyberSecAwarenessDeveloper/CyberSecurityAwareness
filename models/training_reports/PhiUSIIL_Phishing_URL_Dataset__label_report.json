@@ -1,0 +1,10 @@
+{
+  "dataset": "PhiUSIIL_Phishing_URL_Dataset",
+  "label_column": "label",
+  "samples": 235795,
+  "classes": [
+    "0",
+    "1"
+  ],
+  "accuracy": 0.9937
+}

@@ -1,0 +1,13 @@
+{
+  "dataset": "ai_ml_cybersecurity_dataset",
+  "label_column": "Attack Type",
+  "samples": 20000,
+  "classes": [
+    "DDoS",
+    "Insider Threat",
+    "Malware",
+    "Phishing",
+    "Ransomware"
+  ],
+  "accuracy": 0.9998
+}

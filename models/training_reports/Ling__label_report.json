@@ -1,0 +1,10 @@
+{
+  "dataset": "Ling",
+  "label_column": "label",
+  "samples": 2859,
+  "classes": [
+    "0",
+    "1"
+  ],
+  "accuracy": 0.9913
+}

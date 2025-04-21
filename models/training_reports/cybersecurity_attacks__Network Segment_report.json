@@ -1,0 +1,11 @@
+{
+  "dataset": "cybersecurity_attacks",
+  "label_column": "Network Segment",
+  "samples": 40000,
+  "classes": [
+    "Segment A",
+    "Segment B",
+    "Segment C"
+  ],
+  "accuracy": 0.3407
+}

@@ -1,0 +1,10 @@
+{
+  "dataset": "cybersecurity_attacks",
+  "label_column": "Attack Signature",
+  "samples": 40000,
+  "classes": [
+    "Known Pattern A",
+    "Known Pattern B"
+  ],
+  "accuracy": 0.4991
+}

@@ -1,0 +1,10 @@
+{
+  "dataset": "Enron",
+  "label_column": "label",
+  "samples": 29767,
+  "classes": [
+    "0",
+    "1"
+  ],
+  "accuracy": 0.9856
+}

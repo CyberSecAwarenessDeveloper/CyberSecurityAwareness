@@ -47,7 +47,7 @@ from browser_use.browser.views import BrowserState, BrowserStateHistory
 from browser_use.agent.prompts import PlannerPrompt
 
 from json_repair import repair_json
-from src.utils.agent_state import AgentState
+from webUIFiles.src.utils.agent_state import AgentState
 
 from .custom_message_manager import CustomMessageManager, CustomMessageManagerSettings
 from .custom_views import CustomAgentOutput, CustomAgentStepInfo, CustomAgentState

@@ -1,0 +1,11 @@
+{
+  "dataset": "cyber_classification_dataset",
+  "label_column": "label",
+  "samples": 5313,
+  "classes": [
+    " cyber",
+    "cyber",
+    "not_cyber"
+  ],
+  "accuracy": 1.0
+}

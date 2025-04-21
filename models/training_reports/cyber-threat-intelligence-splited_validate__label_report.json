@@ -1,0 +1,27 @@
+{
+  "dataset": "cyber-threat-intelligence-splited_validate",
+  "label_column": "label",
+  "samples": 655,
+  "classes": [
+    "DOMAIN",
+    "EMAIL",
+    "FILEPATH",
+    "IPV4",
+    "Infrastucture",
+    "REGISTRYKEY",
+    "SHA1",
+    "SHA2",
+    "SOFTWARE",
+    "TIME",
+    "URL",
+    "attack-pattern",
+    "campaign",
+    "identity",
+    "location",
+    "malware",
+    "threat-actor",
+    "tools",
+    "vulnerability"
+  ],
+  "accuracy": 0.8321
+}

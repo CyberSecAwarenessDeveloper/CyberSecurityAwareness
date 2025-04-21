@@ -11,7 +11,7 @@ print("\n1. Awareness Model Predictions:")
 print("-------------------------------")
 try:
     # Load awareness model
-    awareness_model = joblib.load('awareness_model.pkl')
+    awareness_model = joblib.load('models/awareness_model.pkl')
     
     # Get feature names from the model
     if hasattr(awareness_model, 'feature_names_in_'):
@@ -55,8 +55,8 @@ print("\n2. Text Threat Analysis:")
 print("----------------------")
 try:
     # Load text model and vectorizer
-    threat_model = joblib.load('threat_model.pkl')
-    text_vectorizer = joblib.load('text_vectorizer.pkl')
+    threat_model = joblib.load('models/threat_model.pkl')
+    text_vectorizer = joblib.load('models/text_vectorizer.pkl')
     
     # Example text data - this works because text data is transformed by the vectorizer
     example_texts = [
@@ -85,7 +85,7 @@ print("\n3. Vulnerability Severity Assessment:")
 print("-----------------------------------")
 try:
     # Load vulnerability model
-    vulnerability_model = joblib.load('vulnerability_model.pkl')
+    vulnerability_model = joblib.load('models/vulnerability_model.pkl')
     
     # Get feature names from the model
     if hasattr(vulnerability_model, 'feature_names_in_'):
@@ -128,7 +128,7 @@ print("\n4. Malware Detection:")
 print("------------------")
 try:
     # Load malware model
-    malware_model = joblib.load('malware_model.pkl')
+    malware_model = joblib.load('models/malware_rf_model.pkl')
     
     # Get feature names from the model
     if hasattr(malware_model, 'feature_names_in_'):

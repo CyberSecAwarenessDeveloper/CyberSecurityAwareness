@@ -1,0 +1,11 @@
+{
+  "dataset": "cybersecurity_attacks",
+  "label_column": "Attack Type",
+  "samples": 40000,
+  "classes": [
+    "DDoS",
+    "Intrusion",
+    "Malware"
+  ],
+  "accuracy": 1.0
+}

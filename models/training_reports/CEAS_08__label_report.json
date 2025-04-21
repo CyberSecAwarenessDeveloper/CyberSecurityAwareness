@@ -1,0 +1,10 @@
+{
+  "dataset": "CEAS_08",
+  "label_column": "label",
+  "samples": 39154,
+  "classes": [
+    "0",
+    "1"
+  ],
+  "accuracy": 0.9959
+}

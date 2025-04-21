@@ -1,0 +1,11 @@
+{
+  "dataset": "cybersecurity_attacks",
+  "label_column": "Traffic Type",
+  "samples": 40000,
+  "classes": [
+    "DNS",
+    "FTP",
+    "HTTP"
+  ],
+  "accuracy": 0.3352
+}

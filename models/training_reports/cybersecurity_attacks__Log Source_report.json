@@ -1,0 +1,10 @@
+{
+  "dataset": "cybersecurity_attacks",
+  "label_column": "Log Source",
+  "samples": 40000,
+  "classes": [
+    "Firewall",
+    "Server"
+  ],
+  "accuracy": 1.0
+}

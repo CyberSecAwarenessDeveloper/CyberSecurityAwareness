@@ -1,0 +1,1 @@
+Ransomware is malware that encrypts victim's files and demands payment for decryption keys.

@@ -1,0 +1,10 @@
+{
+  "dataset": "cybersecurity_attacks",
+  "label_column": "Packet Type",
+  "samples": 40000,
+  "classes": [
+    "Control",
+    "Data"
+  ],
+  "accuracy": 1.0
+}

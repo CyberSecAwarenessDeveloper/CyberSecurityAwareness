@@ -1,0 +1,11 @@
+{
+  "dataset": "cybersecurity_attacks",
+  "label_column": "Severity Level",
+  "samples": 40000,
+  "classes": [
+    "High",
+    "Low",
+    "Medium"
+  ],
+  "accuracy": 0.3311
+}

@@ -1,0 +1,11 @@
+{
+  "dataset": "cve_dataset",
+  "label_column": "access_complexity",
+  "samples": 88776,
+  "classes": [
+    "HIGH",
+    "LOW",
+    "MEDIUM"
+  ],
+  "accuracy": 0.8453
+}

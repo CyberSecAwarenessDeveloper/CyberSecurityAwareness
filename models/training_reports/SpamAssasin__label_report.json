@@ -1,0 +1,10 @@
+{
+  "dataset": "SpamAssasin",
+  "label_column": "label",
+  "samples": 5809,
+  "classes": [
+    "0",
+    "1"
+  ],
+  "accuracy": 0.975
+}

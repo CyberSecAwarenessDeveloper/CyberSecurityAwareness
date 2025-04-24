@@ -54,21 +54,13 @@ educational purposes.*
 ## Learning Level Self-Assessment
 | LO | Level | Reflection |
 |------|------------|------------|
-| LO1 | Beginning/Proficient | Privacy and societal impact are
-considered in all design choices. A societal impact analysis will
-be done|
-| LO2 | Proficient | Problems are identified and solved
-iteratively, with evidence in code and documentation. |
-| LO3 | Proficient | Data is cleaned, validated, and pipelines
-are robust. |
-| LO4 | Proficient | Models are trained, tested, and improved
-based on real feedback. |
-| LO5 | Beginning | UI is clear and functional, but more
-advanced visualizations could be added. |
-| LO6 | Beginning | Documentation and reporting needs to be up-
-to-date and thorough. |
-| LO7 | Proficient | Demonstrated initiative and continuous
-improvement mindset. |
+| LO1 | Beginning/Proficient | Privacy and societal impact are considered in all design choices. A societal impact analysis will be done|
+| LO2 | Proficient | Problems are identified and solved iteratively, with evidence in code and documentation. |
+| LO3 | Proficient | Data is cleaned, validated, and pipelines are robust. |
+| LO4 | Proficient | Models are trained, tested, and improved based on real feedback. |
+| LO5 | Beginning | UI is clear and functional, but more advanced visualizations could be added. |
+| LO6 | Beginning | Documentation and reporting needs to be up- to-date and thorough. |
+| LO7 | Proficient | Demonstrated initiative and continuous improvement mindset. |
 | LO8 | TBA | Will be set in the PDR. |
 ---
 ## Development Level Scale

@@ -1,4 +1,4 @@
-# # Cybersecurity Awareness Assistant: Project Overview & Progress
+# Cybersecurity Awareness Assistant: Project Overview & Progress
 ## Project Summary
 This project is an AI-powered Cybersecurity Awareness Assistant
 designed to help users understand, detect, and prevent

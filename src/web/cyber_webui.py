@@ -1,5 +1,5 @@
 # src/web/cyber_webui.py
-import gradio as gr, logging
+import gradio as gr, logging, time
 from fastapi import FastAPI
 from src.ml.predictor import answer_with_rag, check_ollama_running
 
@@ -24,33 +24,53 @@ def handle_prompt(user_message, history, role):
     if history is None:
         history = []
     
-    # Create new history list (don't modify input directly)
-    new_history = list(history)
+    # Add user message to history immediately
+    history.append({"role": "user", "content": user_message})
     
-    # Add user message to history
-    new_history.append({"role": "user", "content": user_message})
+    # Create a placeholder for the assistant's response
+    history.append({"role": "assistant", "content": "Thinking..."})
+    
+    # Return the history with the placeholder, and a function that will update it
+    return history, user_message, role
+
+def stream_response(history, user_message, role):
+    """Generate a streaming response and update the history"""
+    # Track time for performance metrics
+    start_time = time.time()
+    
+    # The current state of the streaming response
+    response_so_far = ""
+    
+    # Define callback for streaming updates
+    def update_response(content):
+        nonlocal response_so_far
+        response_so_far = content
+        
+        # Update the last message in history (the assistant's response)
+        history[-1]["content"] = content
+        return history
     
     try:
-        # Get response from RAG system
-        answer = answer_with_rag(user_message, k=3, role=role)
+        # Generate response with streaming updates
+        answer = answer_with_rag(user_message, k=3, role=role, stream_callback=update_response)
         
-        # Log the response (truncated)
-        logger.info(f"A: {answer[:50]}..." if answer and len(answer) > 50 else f"A: {answer}")
-        
-        # Add the assistant's response to history
-        new_history.append({"role": "assistant", "content": answer})
+        # Ensure the final response is properly set
+        if not response_so_far:
+            history[-1]["content"] = answer
+            
+        # Log timing information
+        end_time = time.time()
+        logger.info(f"Response generated in {end_time - start_time:.2f} seconds")
         
     except Exception as e:
-        logger.error(f"Error in handle_prompt: {e}", exc_info=True)
-        new_history.append({"role": "assistant", "content": "I encountered an error while processing your request."})
+        logger.error(f"Error generating response: {e}", exc_info=True)
+        history[-1]["content"] = "I encountered an error while processing your request."
     
-    # Return the new history
-    return new_history
+    return history
 
 with gr.Blocks(title="Cybersecurity Awareness Assistant") as interface:
     # Status indicator
     with gr.Row():
-        ollama_status = gr.State(check_ollama_running())
         status_indicator = gr.Markdown(
             "🟢 Ollama server is running" if check_ollama_running() else "🔴 Ollama server is offline - Using fallback mode"
         )
@@ -65,7 +85,7 @@ with gr.Blocks(title="Cybersecurity Awareness Assistant") as interface:
         info="Choose how the assistant should respond to your questions"
     )
     
-    # Chat interface with messages format - NO AVATARS
+    # Chat interface with messages format
     chatbot = gr.Chatbot(
         value=[], 
         label="Cybersecurity Chat",
@@ -85,22 +105,13 @@ with gr.Blocks(title="Cybersecurity Awareness Assistant") as interface:
     # Clear button
     clear_btn = gr.ClearButton([msg, chatbot], value="Clear Chat")
     
-    def respond(message, chat_history, role):
-        """Process a user message and return the updated chat history"""
-        if not message.strip():
-            return chat_history, ""
-            
-        # Process the message and get updated history
-        updated_history = handle_prompt(message, chat_history, role)
-        
-        # Return updated history and clear message box
-        return updated_history, ""
-
-    # Connect UI components to functions
-    msg.submit(respond, [msg, chatbot, role_dropdown], [chatbot, msg])
-    submit_btn.click(respond, [msg, chatbot, role_dropdown], [chatbot, msg])
+    # Performance metrics
+    with gr.Accordion("Performance Metrics", open=False):
+        with gr.Row():
+            response_time = gr.Label(value="Last response time: N/A", label="Response Time")
+            cache_status = gr.Label(value="Cache: Not used", label="Cache Status")
     
-    # Debug panel with basic info only
+    # Debug info
     with gr.Accordion("Debug Info", open=False):
         debug_info = gr.Textbox(
             label="Debug Log", 
@@ -119,6 +130,28 @@ with gr.Blocks(title="Cybersecurity Awareness Assistant") as interface:
             except:
                 return "Error parsing history."
             
-        chatbot.change(update_debug, chatbot, debug_info)
+    # Handle message submission with streaming
+    def respond(message, chat_history, role):
+        """Initial response handler that sets up streaming"""
+        if not message.strip():
+            return chat_history, "", role
+        
+        # Set up the streaming response
+        updated_history, msg, selected_role = handle_prompt(message, chat_history, role)
+        
+        # Return the updated history with the thinking placeholder, and clear the message input
+        return updated_history, "", selected_role
+    
+    # Connect the UI components to their respective handlers
+    msg.submit(respond, [msg, chatbot, role_dropdown], [chatbot, msg, role_dropdown]).then(
+        stream_response, [chatbot, msg, role_dropdown], [chatbot]
+    )
+    
+    submit_btn.click(respond, [msg, chatbot, role_dropdown], [chatbot, msg, role_dropdown]).then(
+        stream_response, [chatbot, msg, role_dropdown], [chatbot]
+    )
+    
+    # Update debug info when chatbot changes
+    chatbot.change(update_debug, chatbot, debug_info)
 
 app = gr.mount_gradio_app(app, interface, path="/chat")

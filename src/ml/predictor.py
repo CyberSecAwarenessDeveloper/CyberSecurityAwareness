@@ -1,5 +1,5 @@
 # src/ml/predictor.py
-import os, logging, requests, json, re, time
+import os, logging, requests, json, re, time, functools
 import numpy as np
 from collections import namedtuple
 from src.ml.load_models import load_all_models
@@ -19,6 +19,51 @@ ROLE_PROMPTS = {
 
 # Default role
 DEFAULT_ROLE = "Security Expert"
+
+# Cache implementation
+response_cache = {}
+
+@functools.lru_cache(maxsize=100)
+def get_cached_response(question: str, role: str) -> str:
+    """Get cached response using LRU cache for common questions"""
+    cache_key = f"{role}:{question}"
+    return response_cache.get(cache_key)
+
+def save_to_cache(question: str, role: str, response: str) -> None:
+    """Save response to cache"""
+    cache_key = f"{role}:{question}"
+    response_cache[cache_key] = response
+    
+    # Also save to disk cache for persistence
+    try:
+        os.makedirs("data/cache", exist_ok=True)
+        cache_file = f"data/cache/{hash(cache_key)}.json"
+        with open(cache_file, "w", encoding="utf-8") as f:
+            json.dump({"question": question, "role": role, "response": response}, f)
+    except Exception as e:
+        logger.warning(f"Failed to save to disk cache: {e}")
+
+def load_disk_cache():
+    """Load cached responses from disk"""
+    try:
+        cache_dir = "data/cache"
+        if not os.path.exists(cache_dir):
+            return
+            
+        for filename in os.listdir(cache_dir):
+            if filename.endswith(".json"):
+                try:
+                    with open(os.path.join(cache_dir, filename), "r", encoding="utf-8") as f:
+                        data = json.load(f)
+                        cache_key = f"{data['role']}:{data['question']}"
+                        response_cache[cache_key] = data['response']
+                except Exception as e:
+                    logger.warning(f"Failed to load cache file {filename}: {e}")
+    except Exception as e:
+        logger.warning(f"Failed to load disk cache: {e}")
+
+# Load disk cache at startup
+load_disk_cache()
 
 # ------------------------------------------------------------------ #
 # 1.   TOP‑k LABELS FROM ALL MODELS
@@ -133,69 +178,25 @@ def sanitize_response(text):
     return text.strip()
 
 # ------------------------------------------------------------------ #
-# 4.   FALLBACK RESPONSE FOR OFFLINE MODE
-# ------------------------------------------------------------------ #
-def get_fallback_response(question: str) -> str:
-    """Provide a fallback response when Ollama is unavailable"""
-    # Generic cybersecurity fallback
-    if "ddos" in question.lower() or "denial" in question.lower():
-        return """
-A DDoS (Distributed Denial of Service) attack is a type of cyberattack where attackers flood a target server or network with excessive traffic from multiple sources, making it unavailable to users.
-
-Key characteristics:
-- Uses multiple compromised computers (often forming a botnet)
-- Overwhelms network resources and bandwidth
-- Causes service disruption for legitimate users
-- Can target websites, online services, or entire networks
-
-Common defenses include traffic filtering, rate limiting, using CDNs, and DDoS protection services.
-        """
-    elif "phishing" in question.lower():
-        return """
-Phishing is a cybersecurity attack where criminals impersonate trusted entities to trick people into revealing sensitive information like passwords or credit card details.
-
-Phishing typically uses deceptive emails, fake websites, or messages that appear legitimate but are designed to steal your information.
-        """
-    else:
-        return """
-I'm currently operating in offline mode because the AI model isn't available. I can provide basic information about common cybersecurity topics like DDoS attacks, phishing, malware, and best practices.
-
-Please try asking a more specific question about a cybersecurity topic, or try again later when the connection to the AI model is restored.
-        """
-
-# ------------------------------------------------------------------ #
-# 5.   OLLAMA CONNECTION WITH IMPROVED ERROR HANDLING
+# 4.   OLLAMA CONNECTION WITH OPTIMIZED CONFIGURATION
 # ------------------------------------------------------------------ #
 OLLAMA_URL = os.getenv("OLLAMA_ENDPOINT", "http://localhost:11434")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL_NAME", "deepseek-r1:7b")
 
-def preload_model():
-    """Preload the model to avoid cold start delays"""
-    try:
-        logger.info(f"Preloading Ollama model: {OLLAMA_MODEL}")
-        payload = {
-            "model": OLLAMA_MODEL,
-            "messages": [
-                {"role": "system", "content": "Hello, this is a preload test."},
-                {"role": "user", "content": "Hi"}
-            ],
-            "stream": False,
-            "options": {
-                "num_ctx": 2048,
-                "num_gpu": 1,
-                "num_thread": 8,
-                "temperature": 0.7,
-                "repeat_penalty": 1.1,
-                "keep_alive": "1h"  # Keep model loaded for 1 hour
-            }
-        }
-        r = requests.post(f"{OLLAMA_URL}/api/chat", json=payload, timeout=(120, 120))
-        r.raise_for_status()
-        logger.info(f"✅ Model {OLLAMA_MODEL} preloaded successfully")
-        return True
-    except Exception as e:
-        logger.error(f"❌ Failed to preload model: {e}")
-        return False
+# Optimized Ollama configuration for RTX 3050 Ti (4GB VRAM)
+OLLAMA_CONFIG = {
+    "num_ctx": 2048,           # Reduced context window for faster responses
+    "num_gpu": 1,              # Use single GPU
+    "num_thread": 14,          # Match thread count to CPU cores (i7-12700H)
+    "temperature": 0.7,        # Standard temperature
+    "top_k": 40,               # Limit token selection
+    "top_p": 0.9,              # Nucleus sampling parameter
+    "repeat_penalty": 1.1,     # Slight penalty for repetition
+    "seed": 42,                # Consistent seeding for reproducibility
+    "num_predict": 256,        # Limit token generation
+    "cache_prompt": True,      # Enable prompt caching
+    "keep_alive": "10m"        # Keep model loaded for 10 minutes
+}
 
 def check_ollama_running():
     """Check if Ollama server is running"""
@@ -205,67 +206,98 @@ def check_ollama_running():
     except:
         return False
 
-def ask_llm(system_prompt: str, user_prompt: str) -> str:
-    """Send request to Ollama with better error handling"""
-    # First check if Ollama is actually running
-    if not check_ollama_running():
-        logger.error("Ollama server is not running")
-        return get_fallback_response(user_prompt)
-    
-    for attempt in range(2):  # Try twice
-        try:
-            payload = {
-                "model": OLLAMA_MODEL,
-                "messages": [
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt}
-                ],
-                "stream": False,
-                "options": {
-                    "num_ctx": 2048,
-                    "num_gpu": 1,
-                    "num_thread": 8,
-                    "temperature": 0.7,
-                    "repeat_penalty": 1.1,
-                    "keep_alive": "1h"
-                }
-            }
-            
-            # Longer timeouts (120s connection, 300s read)
-            r = requests.post(f"{OLLAMA_URL}/api/chat", json=payload, timeout=(120, 300))
+def ask_llm_streaming(system_prompt: str, user_prompt: str, callback=None):
+    """Stream response from Ollama with better user experience"""
+    try:
+        payload = {
+            "model": OLLAMA_MODEL,
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            "stream": True,
+            "options": OLLAMA_CONFIG
+        }
+        
+        logger.info(f"Sending streaming request to Ollama with model: {OLLAMA_MODEL}")
+        
+        with requests.post(f"{OLLAMA_URL}/api/chat", json=payload, 
+                          timeout=(10, 300), stream=True) as r:
             r.raise_for_status()
             
-            response_json = r.json()
-            if "message" not in response_json or "content" not in response_json["message"]:
-                raise ValueError(f"Unexpected response format from Ollama")
-                
-            content = response_json["message"]["content"].strip()
+            # Process the streaming response
+            full_response = ""
+            for line in r.iter_lines():
+                if line:
+                    line_text = line.decode('utf-8')
+                    if line_text.startswith('data: '):
+                        try:
+                            data = json.loads(line_text[6:])
+                            if 'message' in data and 'content' in data['message']:
+                                content = data['message']['content']
+                                full_response += content
+                                
+                                # Call the callback with the current accumulated response
+                                if callback:
+                                    callback(full_response)
+                        except json.JSONDecodeError:
+                            continue
             
-            # Make sure we don't expose thinking process
-            cleaned_content = sanitize_response(content)
-            
-            if not cleaned_content:
-                raise ValueError("Received empty response from model")
-                
-            return cleaned_content
-            
-        except requests.exceptions.Timeout:
-            logger.error(f"Ollama timeout (attempt {attempt+1}/2)")
-            if attempt == 1:
-                return get_fallback_response(user_prompt)
-        except Exception as e:
-            logger.error(f"Ollama error (attempt {attempt+1}/2): {e}")
-            if attempt == 1:
-                return get_fallback_response(user_prompt)
+            # Clean up the final response
+            return sanitize_response(full_response)
+    except requests.exceptions.Timeout:
+        logger.error(f"Ollama streaming timeout")
+        return "⚠️ The model is taking too long to respond. Please try again with a simpler question."
+    except Exception as e:
+        logger.error(f"Ollama streaming error: {e}")
+        return "⚠️ I encountered a technical issue. Please try again later."
+
+def ask_llm(system_prompt: str, user_prompt: str) -> str:
+    """Send request to Ollama with optimized configuration"""
+    if not check_ollama_running():
+        logger.error("Ollama server is not running")
+        return "⚠️ Ollama server is not running. Please start Ollama and try again."
     
-    return get_fallback_response(user_prompt)
+    try:
+        payload = {
+            "model": OLLAMA_MODEL,
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            "stream": False,
+            "options": OLLAMA_CONFIG
+        }
+        
+        # Use longer timeouts for initial connection
+        r = requests.post(f"{OLLAMA_URL}/api/chat", json=payload, timeout=(10, 300))
+        r.raise_for_status()
+        
+        response_json = r.json()
+        if "message" not in response_json or "content" not in response_json["message"]:
+            raise ValueError(f"Unexpected response format from Ollama")
+            
+        content = response_json["message"]["content"].strip()
+        
+        # Clean up the response
+        return sanitize_response(content)
+    except Exception as e:
+        logger.error(f"Ollama error: {e}")
+        return "⚠️ I encountered a technical issue. Please try again later."
 
 # ------------------------------------------------------------------ #
-# 6.   PUBLIC ENTRYPOINT FOR THE UI
+# 5.   PUBLIC ENTRYPOINT FOR THE UI
 # ------------------------------------------------------------------ #
-def answer_with_rag(question: str, k: int = 3, role: str = DEFAULT_ROLE) -> str:
+def answer_with_rag(question: str, k: int = 3, role: str = DEFAULT_ROLE, stream_callback=None) -> str:
     """Generate answer using RAG with multiple models and document retrieval"""
     try:
+        # Check cache first for quick responses to common questions
+        if not stream_callback:  # Only use cache for non-streaming requests
+            cached_response = get_cached_response(question, role)
+            if cached_response:
+                logger.info("Using cached response")
+                return cached_response
+        
         # Get model predictions
         labels = get_top_labels(question, k)
         
@@ -304,11 +336,18 @@ def answer_with_rag(question: str, k: int = 3, role: str = DEFAULT_ROLE) -> str:
         system_prompt = ROLE_PROMPTS.get(role, ROLE_PROMPTS[DEFAULT_ROLE])
         system_prompt += " DO NOT include any thinking or planning process in your response."
         
-        # Get answer from LLM
-        answer = ask_llm(system_prompt, rag_prompt)
-        
-        # Return sanitized answer
-        return sanitize_response(answer)
+        # Choose between streaming and non-streaming based on callback
+        if stream_callback:
+            return ask_llm_streaming(system_prompt, rag_prompt, callback=stream_callback)
+        else:
+            # Get answer from LLM
+            answer = ask_llm(system_prompt, rag_prompt)
+            
+            # Cache the response if it's valid (not an error message)
+            if answer and not answer.startswith("⚠️"):
+                save_to_cache(question, role, answer)
+                
+            return answer
     except Exception as e:
         logger.error(f"Error in answer_with_rag: {e}", exc_info=True)
         return "I'm sorry, but I encountered an error processing your question. Please try again later."
